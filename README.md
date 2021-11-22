@@ -19,4 +19,4 @@ You will need to create categories for the packages you are offering and they mu
 
 When a user selects the "Food and Drink" category for their listing, they will be offered all the packages which have "Food and Drink" as their category.
 
-Note, if a user does not select and category when creating their listing they will be shown any package with a category called "Default". You should therefore immediately assign some of your packages to a category called "Default" which you will have to create. If there are no packages assigned to Default a user who creates a listing with no category will not be offered any packages.
+Note, if a user does not select any category when creating their listing they will be shown any package with a category called "Default". You should therefore immediately assign some of your packages to a category called "Default" which you will have to create. If there are no packages assigned to Default a user who creates a listing with no category will not be offered any packages.
