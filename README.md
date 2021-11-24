@@ -21,3 +21,7 @@ You will need to create categories for the packages you are offering and they mu
 When a user selects the "Food and Drink" category for their listing, they will be offered all the packages which have "Food and Drink" as their category.
 
 Note, if a user does not select any category when creating their listing they will be shown any package with a category called "Default". You should therefore immediately assign some of your packages to a category called "Default" which you will have to create. If there are no packages assigned to Default a user who creates a listing with no category will not be offered any packages, which is not something you will want to happen! Be sure to assign at least one package to a category called "Default".
+
+## Note
+
+At this version the plugin contains some code that writes comments to the php error log for debugging purposes. These will remain until the person who this was written for confirms that the plugin works correctly. When testing is complete the debug code will be removed and a new version issued.
