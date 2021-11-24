@@ -1,6 +1,6 @@
 <?php
    /*
-   Plugin Name: Listeo custom package handling for
+   Plugin Name: Listeo custom package handling
    Plugin URI: http://www.rumdoodle.at
    description: Displays packages to an owner based on what category of listing they choose
    Version: 0.2
