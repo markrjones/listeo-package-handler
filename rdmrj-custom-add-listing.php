@@ -3,7 +3,7 @@
    Plugin Name: Listeo custom package handling
    Plugin URI: http://www.rumdoodle.at
    description: Displays packages to an owner based on what category of listing they choose
-   Version: 0.2
+   Version: 0.3
    Author: Mark Jones, Rum Doodle
    Author URI: 
    License: See Listeo licensing. This is their code with minor changes. Listeo was written
@@ -16,6 +16,10 @@
   // to change it here.
 
   // Changes:
+  //
+  // 0.3
+  // Christos requested that the packages with the category default are offered in the event that
+  // the Owner chooses a listing category that has no corresponding package category.
   //
   // 0.2
   // Added handling for a category of Default. Listeo allows an Owner to create a listing
