@@ -1970,8 +1970,8 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 			// looking for default - added to show default in cases when
 			// the site has listing categories with no corresponding package
 			// category
-			
-			if ( count($packages == 0)){
+
+			if ( !$packages ){
 				$packages = self::get_packages( array ( 'Default' ));
 			}
 
