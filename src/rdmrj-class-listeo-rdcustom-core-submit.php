@@ -1965,7 +1965,15 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 		} else {
 //			$packages      = self::get_packages(  );
 			$packages      = self::get_packages( $mrj_chosen_package_names );
+
+			// MRJ Check to see if we got any packages, if not repeat this time
+			// looking for default - added to show default in cases when
+			// the site has listing categories with no corresponding package
+			// category
 			
+			if ( count($packages == 0)){
+				$packages = self::get_packages( array ( 'Default' ));
+			}
 
 			$user_packages = listeo_core_user_packages( get_current_user_id() );
 			
@@ -2826,12 +2834,12 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 //				),
 //				array(
 //					'taxonomy' => 'product_cat',
-//					'field'    => 'name',
-//					'terms'    => $text,
+//					'field'    => 'name',
+//					'terms'    => $text,
 //					'operator' => 'IN',
 //				),
 //			),
-//			//'meta_query'       => WC()->query->get_meta_query(),
+//			//'meta_query'       => WC()->query->get_meta_query(),
 //		)  );
 //	}
 //
