@@ -5,6 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 //include_once( 'abstracts/abstract-listeo_core-form.php' );
 
 class Rdmrj_Custom_Listeo_Core_Submit  {
+	
 	/**
 	 * Form name.
 	 *
@@ -185,8 +186,8 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 			$this->listing_type = $listing_types[0];
 		}	
 
-		if(!is_admin() && isset($_GET["action"]) && $_GET["action"] == 'edit' ) {
-		 	$this->form_action = "editing";
+		if(!is_admin() && isset($_GET["action"]) && isset($_GET['listing_id'])  && $_GET["action"] == 'edit' ) {
+			$this->form_action = "editing";
 		 	unset($this->steps['type']);
 		 	$this->listing_id = ! empty( $_GET[ 'listing_id' ] ) ? absint( $_GET[ 'listing_id' ] ) : 0;
 		 	
@@ -1049,6 +1050,23 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 						'priority'    => 9,
 						'render_row_col' => '3'
 					),
+					'_payment_option' => array(
+						'label'       => __( 'Payment options', 'listeo_core' ),
+						'type'        => 'select',
+						'tooltip'	  => __('Select which payment type you require for a booking', 'listeo_core'),
+						'required'    => false,
+						'placeholder' => '',
+						'name'        => '_payment_option',
+						'class'		  => '',
+						'priority'    => 10,
+						'render_row_col' => '3',
+						'options'   => array(
+							'pay_now' => __('Require online payment', 'listeo_core'),
+							'pay_maybe' => __('Allow online payment', 'listeo_core'),
+							'pay_cash' => __('Require only cash payment', 'listeo_core'),
+
+						),
+					),
 					'_count_per_guest' => array(
 						'label'       => __( 'Enable Price per Guest', 'listeo_core' ),
 						'type'        => 'checkbox',
@@ -1215,7 +1233,7 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 					}
 
 				
-				
+			if ($coupons) {				
 				$this->fields['coupon_section'] = array(
 					'title' 	=> __('Coupon Widget Settings','listeo_core'),
 					//'class' 	=> 'margin-top-40',
@@ -1241,8 +1259,92 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 							
 					),
 				);
+			}
 
 		}
+	
+		$current_user = wp_get_current_user();
+	
+if (class_exists('WeDevs_Dokan') ) :
+		$args = array(
+			'author'        	=>  $current_user->ID,
+			'posts_per_page'   => -1,
+			'orderby'          => 'title',
+			'order'            => 'asc',
+			'post_type'        => 'product',
+			'post_status'      => 'publish',
+		);
+		$args['tax_query'] = array(
+			'taxonomy' => 'product_type',
+			'field'    => 'slug',
+			'terms' => array('listing_booking','listing_package'), // 
+			'operator' => 'NOT IN'
+		);
+
+		$product_options = array();
+		
+		$args['exclude_listing_booking'] = 'true';
+		$args['tax_query'][] = array(
+			'taxonomy' => 'product_cat',
+			'field' => 'slug',
+			'terms' => array('listeo-booking'), // Don't display products in the clothing category on the shop page.
+			'operator' => 'NOT IN'
+		);
+		$args['tax_query'][] = array(
+			'taxonomy' => 'product_type',
+			'field' => 'slug',
+			'terms' => array('listing_package'), // Don't display products in the clothing category on the shop page.
+			'operator' => 'NOT IN'
+		);
+		$products = wc_get_products($args); 
+		if ($products) {
+			$product_options[0] = esc_html__('Select product', 'listeo_core');
+		}
+		foreach ($products as $product) {
+			$product_options[$product->get_id()] = $product->get_title();
+		}
+			// dokan section
+		if ($products) {
+			$this->fields['store_section'] = array(
+				'title' 	=> __('Store Settings', 'listeo_core'),
+				//'class' 	=> 'margin-top-40',
+				'onoff'		=> true,
+				'icon' 		=> 'fa fa-store-alt',
+				'fields' 	=> array(
+					'_store_section_status' => array(
+						'label'       => __('Store Section status', 'listeo_core'),
+						'type'        => 'skipped',
+						'required'    => false,
+						'name'        => '_store_section_status',
+					),
+					'_store_products' => array(
+						'label'       => __('Select some of your products to display in this listing view', 'listeo_core'),
+						'name'       => '_store_products',
+						'type'        => 'select',
+						'placeholder' => '',
+						'class'		  => '',
+						'priority'    => 1,
+						'multi'    => 'on',
+						'options'	 => $product_options,
+						'required'    => false,
+					),
+					'_store_widget_status' => array(
+						'type'        => 'checkboxes',
+						'required'    => false,
+						'placeholder' => '',
+						'name'        => '_store_widget_status',
+						'label'       => '',
+						'placeholder' => '',
+						'class'		  => '',
+						'options'	=> array(
+							'show' => __('Show store card widget on listing sidebar', 'listeo_core' )
+						),
+					),
+
+				),
+			);
+		}
+	endif; //dokan
 		if(isset( $this->fields['opening_hours']['fields']['_opening_hours'])){
 			 $this->fields['opening_hours']['fields']['_monday_opening_hour'] = array(
 							'label'       => __( 'Monday Opening Hour', 'listeo_core' ),
@@ -1448,11 +1550,14 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 					}
 
 					if($key == '_gallery') {
+						$gallery_limit = get_option('listeo_max_files', 10);
 						if(!empty(self::$package_id)){
 								//	$gallery_limit = self::$package_id;
 							
-							
-							if($package->get_option_gallery_limit()){
+						//if($package->package != null) {
+
+							//if($package && $package->package->package_option_gallery_limit){
+								if($package && $package->get_option_gallery_limit()){
 								$gallery_limit = $package->get_option_gallery_limit();
 							} else {
 								$gallery_limit = get_option('listeo_max_files',10);
@@ -1632,8 +1737,7 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 	 * Displays the form.
 	 */
 	public function submit() {
-		//mrj
-		error_log("in sumbit");
+
 		$this->init_fields();
 		$template_loader = new Listeo_Core_Template_Loader;
 		if ( ! is_user_logged_in() ) {
@@ -1748,11 +1852,6 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 	 * Handles the submission of form data.
 	 */
 	public function submit_handler() {
-
-		//mrj	
-		error_log("in submit_handler");
-
-
 		// Posted Data
 
 		try {
@@ -1820,11 +1919,7 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 	 * Handles the preview step form response.
 	 */
 	public function preview_handler() {
-			
-		//mrj
-		error_log("in preview_handler");
 
-		error_log( serialize($_POST) );
 
 		if ( ! $_POST ) {
 			return;
@@ -1993,9 +2088,6 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 
 	public function choose_package_handler() {
 
-	//mrj
-	error_log("in choose_package_handler");
-	
 		// Validate Selected Package
 		$validation = self::validate_package( self::$package_id, self::$is_user_package );
 
@@ -2057,7 +2149,7 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 	 */
 	private static function process_package( $package_id, $is_user_package, $listing_id ) {
 		// Make sure the job has the correct status
-		
+		do_action( 'listeo_core_listing_submitted', $listing_id );		
 		if ( 'preview' === get_post_status( $listing_id ) ) {
 			// Update job listing
 			$update_job                  = array();
@@ -2221,6 +2313,70 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 	}
 
 
+	protected function get_posted_pricing_field ($key, $field ) {
+		
+		// listeo_write_log($field);
+		// listeo_write_log($_POST[$key]);
+
+		//listeo_write_log($_FILES[$key]);
+		require_once(ABSPATH . 'wp-admin/includes/image.php');
+		require_once(ABSPATH . 'wp-admin/includes/file.php');
+		require_once(ABSPATH . 'wp-admin/includes/media.php');
+		$file_urls       = array();
+		
+		$my_files_array = $_FILES[$key];
+	
+		foreach ($my_files_array['name'] as $x => $xvalue) {
+			
+			foreach ($xvalue as $y => $yvalue) {
+				foreach ($yvalue as $z => $file) {
+					if(!empty($file['cover'])){
+			
+						if(!isset($my_files_array['name'][$x][$y][$z]['cover'])) {
+							continue;
+						}
+						$file_data = $my_files_array;
+						$type              = wp_check_filetype($file_data['name'][$x][$y][$z]['cover']); // Map mime type to one WordPress recognises
+						$file_to_upload = array(
+							'name'     => $file_data['name'][$x][$y][$z]['cover'],
+							'type'     => $type['type'],
+							'tmp_name' => $file_data['tmp_name'][$x][$y][$z]['cover'],
+							'error'    => $file_data['error'][$x][$y][$z]['cover'],
+							'size'     => $file_data['size'][$x][$y][$z]['cover']
+						);
+						listeo_write_log($file_to_upload);
+						$_FILES = array('upload' => $file_to_upload);
+						foreach ($_FILES as $file => $array) {
+							
+							$attachment_id = media_handle_upload($file, 0);
+						}
+						
+						// These files need to be included as dependencies when on the front end.
+							if (is_wp_error($attachment_id)) {
+							//	echo "Error adding file";
+							} else {
+								$file_urls[] = $attachment_id;
+								$_POST[$key][$x][$y][$z]['cover'] =$attachment_id;
+							}
+
+
+						
+					
+					}
+
+
+					
+
+				}
+			}
+			
+		}
+		listeo_write_log($_POST[$key]);
+	
+		return isset($_POST[$key]) ? $this->sanitize_posted_field($_POST[$key]) : '';
+		//return $this->get_posted_textarea_field( $key, $field );
+	}
+
 
 	protected function get_posted_file_field( $key, $field ) {
 		
@@ -2376,6 +2532,7 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 							
 						}
 						
+
 						update_post_meta( $this->listing_id, $key, $values[ $group_key ][ $key ] );
 					}
 
@@ -2462,18 +2619,13 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 		do_action( 'listeo_core_update_listing_data', $this->listing_id, $values );
 	}
 
+
 	/**
 	 * Displays preview of listing Listing.
 	 */
 	public function preview() {
 		global $post, $listing_preview;
 		
-		//mrj
-		error_log("In preview");
-
-
-     //   error_log($this->form_name);
-
 		if ( $this->listing_id ) {
 			$listing_preview       = true;
 			$post              = get_post( $this->listing_id );
@@ -2774,8 +2926,6 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 	 * @return array
 	 */
 	public static function get_packages( $text ) {
-		error_log("In get_packages");
-		error_log("incoming param is: " . serialize($text));
 		foreach( $text as $only ){
 			error_log($only);
 		}
@@ -2812,37 +2962,6 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 		)  );
 	}
 
-	 //	public static function get_packages( $post__in = array() ) {
-// mrj
-//	public static function get_packages( ) {
-//			return get_posts( array(
-//			'post_type'        => 'product',
-//			'posts_per_page'   => -1,
-////			'post__in'         => $post__in,
-////mrj
-////			'post__in'         => $post__in,
-//			'order'            => 'asc',
-//			'orderby'          => 'date',
-//			'suppress_filters' => false,
-//			'tax_query'        => array(
-//				'relation' => 'AND',
-//				array(
-//					'taxonomy' => 'product_type',
-//					'field'    => 'slug',
-//					'terms'    => array( 'listing_package','listing_package_subscription'),
-//					'operator' => 'IN',
-//				),
-//				array(
-//					'taxonomy' => 'product_cat',
-//					'field'    => 'name',
-//					'terms'    => $text,
-//					'operator' => 'IN',
-//				),
-//			),
-//			//'meta_query'       => WC()->query->get_meta_query(),
-//		)  );
-//	}
-//
 	/**
 	 * Change initial job status
 	 *
@@ -2897,12 +3016,18 @@ class Rdmrj_Custom_Listeo_Core_Submit  {
 			// insert listing as WooCommerce product
 			$product_id = wp_insert_post( $product );
 			wp_set_object_terms( $product_id, 'listing_booking', 'product_type' );
+						
+			wp_set_object_terms($product_id, 'exclude-from-catalog', 'product_visibility');
+			wp_set_object_terms($product_id, 'exclude-from-search', 'product_visibility');
+
 
 		} else {
 
 			// update existing product
 			$product['ID'] = $product_id;
 			wp_update_post ( $product );
+			wp_set_object_terms($product_id, 'exclude-from-catalog', 'product_visibility');
+			wp_set_object_terms($product_id, 'exclude-from-search', 'product_visibility');
 
 		}
 
