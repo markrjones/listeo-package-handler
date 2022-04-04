@@ -2709,7 +2709,7 @@ if (class_exists('WeDevs_Dokan') ) :
 
 	function enable_paid_listings($steps){
  
-		if(get_option('listeo_new_listing_requires_purchase' ) && !isset($_GET["action"]) || isset($_GET["action"]) && $_GET["action"] == 'renew' ){
+		if(get_option('listeo_new_listing_requires_purchase' ) && !isset($_GET["action"])){
 
 		/*
 		if(get_option('listeo_core_listing_submit_option', 'listeo_core_new_listing_requires_purchase' ) && !isset($_GET["action"])){*/
@@ -2724,6 +2724,22 @@ if (class_exists('WeDevs_Dokan') ) :
 					'view'     => false,
 					'handler'  => array( $this, 'choose_package_handler' ),
 					'priority' => 25,
+			);
+		}
+
+		// MRJ - Added this for package renewals, which leaves the priorities in their original order
+		if (isset($_GET["action"]) && $_GET["action"] == 'renew' ){
+			$steps['package'] = array(
+				'name'     => __( 'Choose a package', 'listeo_core' ),
+				'view'     => array( $this, 'choose_package' ),
+				'handler'  => array(  $this, 'choose_package_handler' ),
+				'priority' => 5, 
+			);
+			$steps['process-package'] = array(
+				'name'     => '',
+				'view'     => false,
+				'handler'  => array( $this, 'choose_package_handler' ),
+				'priority' => 25,
 			);
 		}
 		return $steps;
